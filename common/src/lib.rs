@@ -4,12 +4,14 @@ pub fn stdin() -> String {
     io::read_to_string(io::stdin()).expect("failed to read input")
 }
 
+#[derive(Clone, Debug)]
 pub enum Part {
     Part1,
     Part2,
     Part3,
 }
 
+#[derive(Clone, Debug)]
 pub struct Args {
     pub input: String,
     pub part: Part,
