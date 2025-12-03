@@ -68,8 +68,8 @@ fn part_2(origin: Complex, step: usize) -> usize {
     let opposite = origin + Complex::new(1_000, 1_000);
     let mut total = 0;
 
-    for x in (origin.x..opposite.x + step as i64).step_by(step) {
-        for y in (origin.y..opposite.y + step as i64).step_by(step) {
+    for x in (origin.x..=opposite.x).step_by(step) {
+        for y in (origin.y..=opposite.y).step_by(step) {
             if is_engraved(Complex::new(x, y)) {
                 total += 1;
             }
