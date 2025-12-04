@@ -5,6 +5,8 @@ use common::{Part, parse_args};
 type Name = String;
 type Names = Vec<Name>;
 type Rules = HashMap<String, HashSet<String>>;
+type NameCache = HashSet<Name>;
+type CharCache = HashMap<(usize, String), usize>;
 
 fn parse(input: &String) -> (Names, Rules) {
     let lines = input
@@ -50,7 +52,7 @@ fn is_valid(name: &Name, rules: &Rules) -> bool {
     true
 }
 
-fn find_valids(names: &Names, rules: &Rules) -> Vec<(usize, Name)> {
+fn filter_invalid_names(names: &Names, rules: &Rules) -> Vec<(usize, Name)> {
     names
         .iter()
         .cloned()
@@ -60,7 +62,7 @@ fn find_valids(names: &Names, rules: &Rules) -> Vec<(usize, Name)> {
 }
 
 fn first_valid(names: &Names, rules: &Rules) -> Option<String> {
-    match find_valids(names, rules).first() {
+    match filter_invalid_names(names, rules).first() {
         Some((_, name)) => Some(name.clone()),
         None => None,
     }
@@ -71,8 +73,8 @@ fn build_name(
     rules: &Rules,
     min_len: usize,
     max_length: usize,
-    name_cache: &mut HashSet<String>,
-    char_cache: &mut HashMap<(usize, String), usize>,
+    name_cache: &mut NameCache,
+    char_cache: &mut CharCache,
 ) -> usize {
     // avoid computing a name that was already computed
     // by a different starting name
@@ -93,14 +95,14 @@ fn build_name(
 
     // first time we're seeing this character as this depth,
     // compute the actual total
-    let mut next_total: usize = 0;
+    let mut total: usize = 0;
 
     if start.len() < max_length - 1
         && let Some(x) = rules.get(end)
     {
         // only recurse if the name isn't too long
         // and if the last character can be extended
-        next_total = x
+        total = x
             .iter()
             .map(|c| {
                 let mut next = name.clone();
@@ -110,19 +112,22 @@ fn build_name(
             .sum();
     }
 
-    // If name is too small, don't add itself to the total count
-    let total = next_total + if name.len() >= min_len { 1 } else { 0 };
+    // Only count the current name if it's big enough
+    if name.len() >= min_len {
+        total += 1;
+    }
 
+    // memo
     char_cache.insert(char_key, total);
 
     total
 }
 
 fn build_names(names: &Names, rules: &Rules, min_len: usize, max_length: usize) -> usize {
-    let mut name_cache: HashSet<String> = HashSet::new();
-    let mut char_cache: HashMap<(usize, String), usize> = HashMap::new();
+    let mut name_cache: NameCache = HashSet::new();
+    let mut char_cache: CharCache = HashMap::new();
 
-    find_valids(names, rules)
+    filter_invalid_names(names, rules)
         .iter()
         .map(|(_, name)| {
             build_name(
@@ -143,7 +148,7 @@ fn main() {
 
     let solution = match args.part {
         Part::Part1 => first_valid(&names, &rules).expect("failed to find a valid name"),
-        Part::Part2 => find_valids(&names, &rules)
+        Part::Part2 => filter_invalid_names(&names, &rules)
             .iter()
             .fold(0, |acc, (i, _)| acc + i + 1)
             .to_string(),
