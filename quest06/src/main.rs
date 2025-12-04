@@ -1,54 +1,42 @@
-use std::cmp::{max, min};
-
 use common::{Part, parse_args};
+use std::cmp::min;
 
-fn modulo(a: i64, b: i64) -> i64 {
-    ((a % b) + b) % b
+fn count(people: &Vec<char>, mentor: char, novice: char) -> usize {
+    (0..people.len())
+        .filter(|&i| people[i] == mentor)
+        .fold(0, |acc, i| {
+            (i..people.len()).fold(
+                acc,
+                |acc, j| if people[j] == novice { acc + 1 } else { acc },
+            )
+        })
 }
 
-fn count(people: &[u8], mentor: char, novice: char) -> i64 {
-    let mut total = 0;
-
-    for (i, person) in people.iter().enumerate() {
-        if *person == (mentor as u8) {
-            for next in &people[i..people.len()] {
-                if *next == novice as u8 {
-                    total += 1;
-                }
-            }
-        }
-    }
-
-    total
-}
-
-fn count_2(people: &[u8], mentor: char, novice: char, distance: i64, repeat: i64) -> i64 {
-    let len = people.len() as i64;
+fn count_2(
+    people: &Vec<char>,
+    mentor: char,
+    novice: char,
+    distance: usize,
+    repeat: usize,
+) -> usize {
+    let len = people.len();
     let total_len = len * repeat;
 
-    let compute_range = |from: i64, to: i64| {
-        let mut total = 0;
-        let mentor_byte = mentor as u8;
-        let novice_byte = novice as u8;
+    let compute_range = |from: usize, to: usize| {
+        (from..to)
+            .filter(|i| people[*i % len] == mentor)
+            .fold(0, |acc, i| {
+                let start_j = i.saturating_sub(distance);
+                let end_j = min(i + distance, total_len - 1);
 
-        for i in from..to {
-            let p = people[modulo(i, len) as usize];
-
-            if p != novice_byte {
-                continue;
-            }
-
-            let start_j = max(i - distance, 0);
-            let end_j = min(i + distance, total_len - 1);
-
-            for j in start_j..=end_j {
-                if people[modulo(j, len) as usize] == mentor_byte {
-                    total += 1;
-                }
-            }
-        }
-
-        total
+                (start_j..=end_j).fold(acc, |acc, j| {
+                    if people[j % len] == novice {
+                        acc + 1
+                    } else {
+                        acc
+                    }
+                })
+            })
     };
 
     let mut total = 0;
@@ -83,16 +71,16 @@ fn count_2(people: &[u8], mentor: char, novice: char, distance: i64, repeat: i64
 
 fn main() {
     let args = parse_args();
-    let people = args.input.trim().as_bytes();
+    let people = args.input.trim().chars().collect::<Vec<_>>();
 
     let solution = match args.part {
-        Part::Part1 => count(people, 'A', 'a'),
+        Part::Part1 => count(&people, 'A', 'a'),
         Part::Part2 => [('A', 'a'), ('B', 'b'), ('C', 'c')]
             .iter()
-            .fold(0, |acc, (m, n)| acc + count(people, *m, *n)),
+            .fold(0, |acc, (m, n)| acc + count(&people, *m, *n)),
         Part::Part3 => [('A', 'a'), ('B', 'b'), ('C', 'c')]
             .iter()
-            .fold(0, |acc, (m, n)| acc + count_2(people, *m, *n, 1000, 1000)),
+            .fold(0, |acc, (m, n)| acc + count_2(&people, *m, *n, 1000, 1000)),
     };
 
     println!("{}", solution);
