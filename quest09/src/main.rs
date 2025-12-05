@@ -163,7 +163,6 @@ fn main() {
         Part::Part2 => compute_similarities(&people),
         Part::Part3 => {
             let graph = build_graph(&people);
-            dbg!("done building the graph");
             find_biggest_family(&graph)
         }
     };
